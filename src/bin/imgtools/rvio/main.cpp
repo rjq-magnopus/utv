@@ -1033,7 +1033,20 @@ int utf8Main(int argc, char* argv[])
     // force the offscreen QPA platform plugin unless the caller already
     // requested a specific one, avoiding any dependency on a real display.
     //
-    if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORM"))
+    bool useOffscreen = !qEnvironmentVariableIsSet("QT_QPA_PLATFORM");
+#ifdef PLATFORM_LINUX
+    //
+    // A platform requested for other applications (e.g. QT_QPA_PLATFORM=xcb
+    // in a shell profile) aborts QGuiApplication when there is no display
+    // to connect to, such as on a render node or over ssh. Without one,
+    // offscreen is the only platform that can work.
+    //
+    if (qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY"))
+    {
+        useOffscreen = true;
+    }
+#endif
+    if (useOffscreen)
     {
         qputenv("QT_QPA_PLATFORM", "offscreen");
     }
